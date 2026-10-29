@@ -1,0 +1,24 @@
+{
+  "name": "foodlink",
+  "version": "1.0.0",
+  "description": "FoodLink - A Surplus Food Redistribution System",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=frontend",
+    "dev": "npm run dev --workspace=frontend",
+    "start": "npm start --workspace=backend",
+    "lint": "echo 'No lint specified'"
+  },
+  "keywords": [
+    "foodlink",
+    "food-redistribution",
+    "sustainability",
+    "campus-pilot"
+  ],
+  "author": "PSG College of Technology Team 1",
+  "license": "MIT"
+}
