@@ -2,11 +2,75 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const FoodLinkContext = createContext(null);
 
+export const DEMO_USERS = [
+  { id: 'u1', name: 'Ramesh Kumar', email: 'donor@foodlink.com', password: 'donor123', role: 'donor', org: 'PSG Hostel Mess D', avatar: '🍱', totalMeals: 312, trustScore: 100 },
+  { id: 'u2', name: 'Hope Shelter NGO', email: 'ngo@foodlink.com', password: 'ngo123', role: 'recipient', org: 'Hope Shelter Gandhipuram', avatar: '🏠', totalMeals: 65, trustScore: 98 },
+  { id: 'u3', name: 'Agilesh M', email: 'vol@foodlink.com', password: 'vol123', role: 'volunteer', org: 'PSG College Student', avatar: '🚴', totalMeals: 28, trustScore: 95 },
+  { id: 'u4', name: 'Admin Sankar', email: 'admin@foodlink.com', password: 'admin123', role: 'admin', org: 'PSG Tech Admin', avatar: '🛡️', totalMeals: 0, trustScore: 100 },
+];
+
+const INITIAL_CLAIMS = [
+  {
+    _id: 'clm-demo-1',
+    listing_id: 'lst-5',
+    listing: {
+      _id: 'lst-5',
+      food_type: 'Vegetable Pulao & Raita',
+      donor_name: 'Hostel Mess',
+      donor_id: 'u1',
+      servings: 40,
+      veg_flag: true,
+      food_nature: 'cooked',
+      prepared_at: '12:30',
+      expires_at: '16:00',
+      expiryHoursLeft: 2.1,
+      location_name: 'Hostel Mess D Gate 2',
+      coordinates: [76.9365, 11.0250],
+      distanceKm: 0.8,
+    },
+    pickup_code: '4729',
+    recipient_name: 'Hope Shelter NGO',
+    recipient_id: 'u2',
+    status: 'claimed',
+    claimed_at: new Date(Date.now() - 30 * 60000).toISOString(),
+    rated: false,
+  },
+  {
+    _id: 'clm-demo-2',
+    listing_id: 'lst-init-picked',
+    listing: {
+      _id: 'lst-init-picked',
+      food_type: 'Packaged Biscuits & Milk Tetrapacks',
+      donor_name: 'Main Canteen',
+      donor_id: 'u1',
+      servings: 25,
+      veg_flag: true,
+      food_nature: 'packaged',
+      prepared_at: '09:00',
+      expires_at: '18:00',
+      expiryHoursLeft: 0,
+      location_name: 'Main Canteen Block 3',
+      coordinates: [76.9385, 11.0255],
+      distanceKm: 1.1,
+    },
+    pickup_code: '8314',
+    recipient_name: 'Hope Shelter NGO',
+    recipient_id: 'u2',
+    status: 'picked_up',
+    claimed_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+    picked_up_at: new Date(Date.now() - 22 * 3600000).toISOString(),
+    rated: true,
+    score: 5,
+    review: 'Excellent condition, fed 25 residents immediately!',
+  },
+];
+
 const INITIAL_LISTINGS = [
   {
     _id: 'lst-1',
     food_type: 'Cooked rice, sambar & curry',
     donor_name: 'Hostel Mess',
+    donor_id: 'u1',
     servings: 50,
     status: 'available', // available | claimed | picked_up | expired
     veg_flag: true,
@@ -23,6 +87,7 @@ const INITIAL_LISTINGS = [
     _id: 'lst-2',
     food_type: 'Packaged snack boxes',
     donor_name: 'Main Canteen',
+    donor_id: 'u1',
     servings: 20,
     status: 'available',
     veg_flag: true,
@@ -39,6 +104,7 @@ const INITIAL_LISTINGS = [
     _id: 'lst-3',
     food_type: 'Chicken biryani',
     donor_name: 'Fest Committee',
+    donor_id: 'u1',
     servings: 35,
     status: 'available',
     veg_flag: false,
@@ -55,6 +121,7 @@ const INITIAL_LISTINGS = [
     _id: 'lst-4',
     food_type: 'Sandwiches & juice',
     donor_name: 'Department Event',
+    donor_id: 'u1',
     servings: 15,
     status: 'available',
     veg_flag: true,
@@ -66,6 +133,31 @@ const INITIAL_LISTINGS = [
     coordinates: [76.9372, 11.0268],
     distanceKm: 0.9,
     claim: null,
+  },
+  {
+    _id: 'lst-5',
+    food_type: 'Vegetable Pulao & Raita',
+    donor_name: 'Hostel Mess',
+    donor_id: 'u1',
+    servings: 40,
+    status: 'claimed',
+    veg_flag: true,
+    food_nature: 'cooked',
+    prepared_at: '12:30',
+    expires_at: '16:00',
+    expiryHoursLeft: 2.1,
+    location_name: 'Hostel Mess D Gate 2',
+    coordinates: [76.9365, 11.0250],
+    distanceKm: 0.8,
+    claim: {
+      _id: 'clm-demo-1',
+      listing_id: 'lst-5',
+      pickup_code: '4729',
+      recipient_name: 'Hope Shelter NGO',
+      recipient_id: 'u2',
+      status: 'claimed',
+      claimed_at: new Date(Date.now() - 30 * 60000).toISOString(),
+    },
   },
 ];
 
@@ -158,7 +250,7 @@ export function FoodLinkProvider({ children }) {
 
   const [claims, setClaims] = useState(() => {
     const saved = localStorage.getItem('foodlink_claims');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : INITIAL_CLAIMS;
   });
 
   const [currentRole, setCurrentRole] = useState(() => {
@@ -167,6 +259,11 @@ export function FoodLinkProvider({ children }) {
 
   const [timeOffsetHours, setTimeOffsetHours] = useState(() => {
     return Number(localStorage.getItem('foodlink_time_offset') || 0);
+  });
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('foodlink_user');
+    return saved ? JSON.parse(saved) : null;
   });
 
   useEffect(() => {
@@ -197,6 +294,32 @@ export function FoodLinkProvider({ children }) {
     localStorage.setItem('foodlink_time_offset', timeOffsetHours);
   }, [timeOffsetHours]);
 
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('foodlink_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('foodlink_user');
+    }
+  }, [currentUser]);
+
+  // Login user from DEMO_USERS
+  const loginUser = (email, password) => {
+    const found = DEMO_USERS.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+    if (!found) return null;
+    setCurrentUser(found);
+    setCurrentRole(found.role);
+    return found;
+  };
+
+  // Logout user
+  const logoutUser = () => {
+    setCurrentUser(null);
+    setCurrentRole('donor');
+    localStorage.removeItem('foodlink_user');
+  };
+
   // Fast forward 3 hours (FR12 Auto-Expiry test)
   const fastForwardHours = (hours = 3) => {
     const newOffset = timeOffsetHours + hours;
@@ -226,7 +349,7 @@ export function FoodLinkProvider({ children }) {
     setImpact(INITIAL_IMPACT);
     setModerationItems(INITIAL_MODERATION_ITEMS);
     setVolunteerTasks(INITIAL_VOLUNTEER_TASKS);
-    setClaims([]);
+    setClaims(INITIAL_CLAIMS);
     setTimeOffsetHours(0);
     localStorage.removeItem('foodlink_listings');
     localStorage.removeItem('foodlink_impact');
@@ -234,6 +357,8 @@ export function FoodLinkProvider({ children }) {
     localStorage.removeItem('foodlink_volunteer_tasks');
     localStorage.removeItem('foodlink_claims');
     localStorage.removeItem('foodlink_time_offset');
+    localStorage.removeItem('foodlink_user');
+    // Note: does NOT reset currentUser — user stays logged in
   };
 
   // Create Listing
@@ -243,6 +368,7 @@ export function FoodLinkProvider({ children }) {
       _id: listingId,
       food_type: newListing.food_type,
       donor_name: newListing.donor_name || 'Hostel Mess',
+      donor_id: currentUser?.id || 'u1',
       servings: Number(newListing.servings) || 10,
       status: 'available',
       veg_flag: Boolean(newListing.veg_flag),
@@ -451,6 +577,10 @@ export function FoodLinkProvider({ children }) {
         acceptVolunteerTask,
         handleModerationAction,
         submitRating,
+        currentUser,
+        loginUser,
+        logoutUser,
+        DEMO_USERS,
       }}
     >
       {children}
@@ -465,4 +595,3 @@ export function useFoodLink() {
   }
   return context;
 }
-
