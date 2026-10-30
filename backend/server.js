@@ -150,8 +150,12 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    await connectDB();
-    expiryService.startExpiryJob();
+    connectDB().catch((err) => {
+      console.warn('⚠️ MongoDB not connected, running with mock/in-memory data:', err.message);
+    });
+    try {
+      expiryService.startExpiryJob();
+    } catch (_) {}
 
     server.listen(PORT, () => {
       console.log(`\n✅ FoodLink API server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
