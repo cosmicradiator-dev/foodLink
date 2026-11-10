@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate Food</title>
+    <link rel="icon" type="image/avif" href="abtme.avif">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="hdr"></header>
+
+    <div class="box">
+        <h2>ADD SURPLUS FOOD</h2>
+        <form onsubmit="return addFood(event)">
+            <div class="grid2">
+                <input id="fn" type="text" placeholder="Food name" required>
+                <input id="fs" type="number" min="1" placeholder="Servings" required>
+                <select id="fv" required>
+                    <option>Veg</option>
+                    <option>Non-veg</option>
+                </select>
+                <select id="fnat" required>
+                    <option>Freshly cooked</option>
+                    <option>Packaged</option>
+                </select>
+                <input class="full" id="fe" type="datetime-local" required title="Expiry time">
+                <input class="full" id="fa" type="text" placeholder="Pickup address / landmark" required>
+                <input id="fd" type="text" placeholder="Donor name" required>
+                <input id="fp" type="tel" placeholder="Phone number" required pattern="[6-9][0-9]{9}" title="enter valid phone number">
+            </div>
+            <div class="center"><button type="submit">Add Food</button></div>
+        </form>
+    </div>
+
+    <h2>ALL LISTINGS</h2>
+    <table>
+        <thead>
+            <tr><th>Food</th><th>Servings</th><th>Expires</th><th>Status</th><th>Inspection</th><th>Action</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+    </table>
+    <br><br>
+
+    <script src="app.js"></script>
+    <script>
+        requireRole("donor");   // only donors can see this page
+        showNav();
+
+        // fill the donor name from the login
+        let me = currentUser();
+        if(me != null){ document.getElementById("fd").value = me.name; }
+
+        function addFood(e){
+            e.preventDefault();
+            let expiry = new Date(document.getElementById("fe").value);
+            if(expiry.getTime() <= Date.now()){
+                alert("Expiry time must be in the future.");
+                return false;
+            }
+
+            let list = loadFood();
+            let id = 1;
+            for(let i=0;i<list.length;i++){ if(list[i].id >= id){ id = list[i].id + 1; } }
+
+            list.push({
+                id: id,
+                name: document.getElementById("fn").value,
+                servings: Number(document.getElementById("fs").value),
+                veg: document.getElementById("fv").value == "Veg",
+                nature: document.getElementById("fnat").value,
+                expires: expiry.toISOString(),
+                address: document.getElementById("fa").value,
+                donor: document.getElementById("fd").value,
+                phone: document.getElementById("fp").value,
+                status: "available",
+                approval: "pending"      // inspector must approve first
+            });
+            saveFood(list);
+            document.forms[0].reset();
+            document.getElementById("fd").value = me.name;
+            showRows();
+            return false;
+        }
+
+        function showRows(){
+            let list = loadFood();
+            let html = "";
+            for(let i=0;i<list.length;i++){
+                let f = list[i];
+                let action = '<button class="red" onclick="removeFood('+f.id+')">Remove</button>';
+                if(f.status == "claimed"){
+                    action = '<input id="c'+f.id+'" type="text" maxlength="4" placeholder="code"> '+
+                             '<button onclick="confirmPickup('+f.id+')">Picked up</button> '+action;
+                }
+                html += '<tr>'+
+                    '<td>'+esc(f.name)+'</td>'+
+                    '<td>'+f.servings+'</td>'+
+                    '<td>'+fmt(f.expires)+'</td>'+
+                    '<td><span class="badge '+f.status+'">'+f.status.replace("_"," ")+'</span></td>'+
+                    '<td><span class="badge '+f.approval+'">'+f.approval+'</span>'+(f.inspectNote ? '<br><small>'+esc(f.inspectNote)+'</small>' : '')+'</td>'+
+                    '<td>'+action+'</td>'+
+                    '</tr>';
+            }
+            document.getElementById("rows").innerHTML = html;
+        }
+
+        // donor types the 4-digit code the claimer shows
+        function confirmPickup(id){
+            let list = loadFood();
+            let f = list.find(function(x){ return x.id == id; });
+            let typed = document.getElementById("c"+id).value;
+            if(typed == f.code){
+                f.status = "picked_up";
+                saveFood(list);
+                showRows();
+            }else{
+                alert("Wrong code.");
+            }
+        }
+
+        function removeFood(id){
+            if(!confirm("Remove this listing?")){ return; }
+            let list = loadFood().filter(function(x){ return x.id != id; });
+            saveFood(list);
+            showRows();
+        }
+
+        showRows();
+    </script>
+</body>
+</html>

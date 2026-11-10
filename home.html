@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodLink</title>
+    <link rel="icon" type="image/avif" href="abtme.avif">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="hdr"></header>
+
+    <div class="stats" id="stats"></div>
+    <div class="container" id="list"></div>
+
+    <script src="app.js"></script>
+    <script>
+        requireRole("ngo");     // only NGOs can see this page
+        showNav();
+
+        // only food approved by the inspector is shown
+        let food = loadFood().filter(function(x){ return x.approval == "approved"; });
+
+        // soonest expiry first, so urgent food is on top
+        food.sort(function(a,b){
+            let aa = a.status=="available" ? 0 : 1;
+            let bb = b.status=="available" ? 0 : 1;
+            if(aa!=bb){ return aa-bb; }
+            return new Date(a.expires)-new Date(b.expires);
+        });
+
+        let meals=0, avail=0, html="";
+        for(let i=0;i<food.length;i++){
+            let f=food[i];
+            if(f.status=="picked_up"){ meals += Number(f.servings); }
+            if(f.status=="available"){ avail++; }
+
+            let btn;
+            if(f.status=="available"){
+                btn='<button onclick="claim('+f.id+')">Claim</button>';
+            }else{
+                btn='<button class="grey" disabled>'+f.status.replace("_"," ")+'</button>';
+            }
+
+            html += '<div class="card">'+
+                '<h2>'+esc(f.name)+'</h2>'+
+                '<div><span class="badge '+f.status+'">'+f.status.replace("_"," ")+'</span></div>'+
+                '<pre>'+
+                '<b>SERVINGS :</b> '+f.servings+'\n'+
+                '<b>TYPE     :</b> '+(f.veg?"Veg":"Non-veg")+' / '+esc(f.nature)+'\n'+
+                '<b>PICKUP   :</b> '+esc(f.address)+'\n'+
+                '<b>EXPIRES  :</b> '+fmt(f.expires)+'\n'+
+                '<b>DONOR    :</b> '+esc(f.donor)+
+                '</pre>'+
+                btn+
+                '</div>';
+        }
+        document.getElementById("list").innerHTML = html;
+        document.getElementById("stats").innerHTML =
+            "<span>Meals saved: <b>"+meals+"</b></span><span>Available now: <b>"+avail+"</b></span><span>Total listings: <b>"+food.length+"</b></span>";
+
+        function claim(id){
+            sessionStorage.setItem("fid", id);
+            window.location.href="reg.html";
+        }
+    </script>
+</body>
+</html>

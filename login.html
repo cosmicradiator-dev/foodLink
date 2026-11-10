@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="icon" type="image/avif" href="abtme.avif">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="hdr"></header>
+
+    <div class="box" style="width:400px">
+        <h2>LOGIN</h2>
+        <form onsubmit="return doLogin(event)">
+            <div class="grid2">
+                <input class="full" id="lu" type="text" placeholder="Username" required>
+                <input class="full" id="lp" type="password" placeholder="Password" required>
+            </div>
+            <div class="error" id="err"></div>
+            <div class="center"><button type="submit">Login</button></div>
+        </form>
+        <div class="hint">
+            Demo accounts<br>
+            Donor: <b>donor</b> / <b>donor123</b><br>
+            NGO: <b>ngo</b> / <b>ngo123</b><br>
+            Admin: <b>admin</b> / <b>admin123</b><br>
+            Inspector: <b>inspector</b> / <b>inspect123</b>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        showNav();
+
+        // already logged in? go to your own page
+        let me = currentUser();
+        if(me != null){
+            window.location.href = homeFor(me.role);
+        }
+
+        function doLogin(e){
+            e.preventDefault();
+            let u = document.getElementById("lu").value;
+            let p = document.getElementById("lp").value;
+            let found = USERS.find(function(x){ return x.user == u && x.pass == p; });
+
+            if(found == null){
+                document.getElementById("err").innerHTML = "Wrong username or password";
+                return false;
+            }
+            sessionStorage.setItem("USER", JSON.stringify({ name:found.name, role:found.role }));
+            window.location.href = homeFor(found.role);
+            return false;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="icon" type="image/avif" href="abtme.avif">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="hdr"></header>
+
+    <div class="stats" id="stats"></div>
+
+    <h2>ALL LISTINGS</h2>
+    <table>
+        <thead>
+            <tr><th>Food</th><th>Donor</th><th>Servings</th><th>Expires</th><th>Status</th><th>Inspection</th><th>Claimed by</th><th>Action</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+    </table>
+    <br><br>
+
+    <script src="app.js"></script>
+    <script>
+        requireRole("admin");    // only the admin can see this page
+        showNav();
+
+        function show(){
+            let list = loadFood();
+            let meals=0, pending=0, approved=0, rejected=0, claimed=0;
+            let rows = "";
+
+            for(let i=0;i<list.length;i++){
+                let f = list[i];
+                if(f.status == "picked_up"){ meals += Number(f.servings); }
+                if(f.status == "claimed"){ claimed++; }
+                if(f.approval == "pending"){ pending++; }
+                if(f.approval == "approved"){ approved++; }
+                if(f.approval == "rejected"){ rejected++; }
+
+                let action = '<button class="red" onclick="removeFood('+f.id+')">Remove</button>';
+                // send back to the inspector (only if nobody has claimed it)
+                if(f.status == "available" && f.approval != "pending"){
+                    action = '<button class="grey" onclick="reInspect('+f.id+')">Re-inspect</button> '+action;
+                }
+
+                rows += '<tr>'+
+                    '<td>'+esc(f.name)+'</td>'+
+                    '<td>'+esc(f.donor)+'</td>'+
+                    '<td>'+f.servings+'</td>'+
+                    '<td>'+fmt(f.expires)+'</td>'+
+                    '<td><span class="badge '+f.status+'">'+f.status.replace("_"," ")+'</span></td>'+
+                    '<td><span class="badge '+f.approval+'">'+f.approval+'</span></td>'+
+                    '<td>'+(f.claimer ? esc(f.claimer.name) : "-")+'</td>'+
+                    '<td>'+action+'</td>'+
+                    '</tr>';
+            }
+            document.getElementById("rows").innerHTML = rows;
+            document.getElementById("stats").innerHTML =
+                "<span>Listings: <b>"+list.length+"</b></span>"+
+                "<span>Pending: <b>"+pending+"</b></span>"+
+                "<span>Approved: <b>"+approved+"</b></span>"+
+                "<span>Rejected: <b>"+rejected+"</b></span>"+
+                "<span>Claimed: <b>"+claimed+"</b></span>"+
+                "<span>Meals saved: <b>"+meals+"</b></span>";
+        }
+
+        function removeFood(id){
+            if(!confirm("Remove this listing?")){ return; }
+            saveFood(loadFood().filter(function(x){ return x.id != id; }));
+            show();
+        }
+
+        function reInspect(id){
+            let list = loadFood();
+            let f = list.find(function(x){ return x.id == id; });
+            f.approval = "pending";
+            f.inspectNote = "";
+            saveFood(list);
+            show();
+        }
+
+        show();
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Claims</title>
+    <link rel="icon" type="image/avif" href="abtme.avif">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="hdr"></header>
+
+    <div id="out"></div>
+
+    <script src="app.js"></script>
+    <script>
+        requireRole("ngo");
+        showNav();
+
+        let mine = JSON.parse(localStorage.getItem("MYCLAIMS") || "[]");
+        let food = loadFood();
+        let html = "";
+
+        for(let i=mine.length-1; i>=0; i--){
+            let f = food.find(function(x){ return x.id == mine[i]; });
+            if(f == null || f.claimer == null){ continue; }     // donor removed it
+
+            html += '<div class="box">'+
+                '<h2>'+esc(f.name)+'</h2>'+
+                '<div class="code">'+esc(f.code)+'</div>'+
+                '<p class="center">Show this code to the donor when you collect.</p>'+
+                '<pre>'+
+                '<b>STATUS    :</b> '+f.status.replace("_"," ")+'\n'+
+                '<b>PICKUP AT :</b> '+esc(f.address)+'\n'+
+                '<b>DONOR     :</b> '+esc(f.donor)+' ('+esc(f.phone)+')\n'+
+                '<b>EXPIRES   :</b> '+fmt(f.expires)+'\n'+
+                '<b>CLAIMED ON:</b> '+fmt(f.claimedAt)+'\n'+
+                '<b>NAME      :</b> '+esc(f.claimer.name)+'\n'+
+                '<b>PHONE     :</b> '+esc(f.claimer.phone)+'\n'+
+                '<b>MAIL ID   :</b> '+esc(f.claimer.mail)+'\n'+
+                '<b>TYPE      :</b> '+esc(f.claimer.type)+
+                '</pre></div>';
+        }
+
+        if(html == ""){
+            html = '<div class="box"><h2>MY CLAIMS</h2><p class="center">Nothing claimed yet.</p></div>';
+        }
+        document.getElementById("out").innerHTML = html;
+    </script>
+</body>
+</html>
