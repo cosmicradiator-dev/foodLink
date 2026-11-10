@@ -32,8 +32,6 @@
     <script src="app.js"></script>
     <script>
         showNav();
-
-        // already logged in? go to your own page
         let me = currentUser();
         if(me != null){
             window.location.href = homeFor(me.role);
