@@ -36,18 +36,22 @@
     <h2>ALL LISTINGS</h2>
     <table>
         <thead>
-            <tr><th>Food</th><th>Servings</th><th>Expires</th><th>Status</th><th>Inspection</th><th>Action</th></tr>
+            <tr>
+                <th>Food</th>
+                <th>Servings</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th>Inspection</th>
+                <th>Action</th>
+            </tr>
         </thead>
         <tbody id="rows"></tbody>
     </table>
-    <br><br>
 
     <script src="app.js"></script>
     <script>
-        requireRole("donor");   // only donors can see this page
+        requireRole("donor");
         showNav();
-
-        // fill the donor name from the login
         let me = currentUser();
         if(me != null){ document.getElementById("fd").value = me.name; }
 
@@ -61,7 +65,11 @@
 
             let list = loadFood();
             let id = 1;
-            for(let i=0;i<list.length;i++){ if(list[i].id >= id){ id = list[i].id + 1; } }
+            for(let i=0;i<list.length;i++)
+            { if(list[i].id >= id)
+            { id = list[i].id + 1; 
+            }
+            }
 
             list.push({
                 id: id,
