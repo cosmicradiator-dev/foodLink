@@ -1,6 +1,6 @@
 // shared helpers used by every page
 
-// ---------- login (kept in sessionStorage, so it ends when the tab closes) ----------
+// ---------- login (kept in sessionStorage, so it ends when the tab closes) ---------- 
 // demo accounts: change or add your own here
 const USERS = [
     { user:"donor",     pass:"donor123",   role:"donor",     name:"Green Mess" },
