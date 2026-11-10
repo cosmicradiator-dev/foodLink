@@ -1,5 +1,5 @@
 # FoodLink (simple version)
-
+ 
 Plain HTML, CSS and JavaScript. No React, no backend, no install, no animations.
 Open `login.html` (or `index.html`) in a browser.
 
