@@ -31,3 +31,5 @@ Flow: donor adds food (pending) -> inspector tastes and approves -> NGO sees it 
 
 Accounts are in the `USERS` list at the top of app.js.
 To reset the demo data: browser console, `localStorage.clear()`.
+
+We are planning to use official college gmail ids for sending email notifications to the ngo
