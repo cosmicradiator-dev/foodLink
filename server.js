@@ -1,5 +1,6 @@
 const express = require("express");
 const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
 const mongoose = require("mongoose");
 const path = require("path");
 
@@ -7,12 +8,62 @@ const User = require("./models/User");
 const Food = require("./models/Food");
 
 const app = express();
-const PORT = 3000;
-const MONGO_URL = "mongodb://127.0.0.1:27017/foodlink";
+const PORT = process.env.PORT || 3000;
+const MONGO_URL = process.env.MONGODB_URI;
+let connectionPromise;
+let sessionMiddleware;
 
+app.set("trust proxy", 1);
 app.use(express.json());
-app.use(session({ secret: "foodlink-secret", resave: false, saveUninitialized: false }));
 app.use(express.static(path.join(__dirname, "public")));
+
+async function connectMongo() {
+    if (!MONGO_URL) {
+        throw new Error("MONGODB_URI is not configured");
+    }
+
+    if (mongoose.connection.readyState === 0 || mongoose.connection.readyState === 3) {
+        connectionPromise = null;
+    }
+
+    if (!connectionPromise) {
+        connectionPromise = mongoose.connect(MONGO_URL, { serverSelectionTimeoutMS: 10000 })
+            .then(async function () {
+                await addSampleData();
+                sessionMiddleware = session({
+                    secret: process.env.SESSION_SECRET || "foodlink-secret",
+                    resave: false,
+                    saveUninitialized: false,
+                    store: MongoStore.create({
+                        client: mongoose.connection.getClient(),
+                        collectionName: "sessions"
+                    }),
+                    cookie: {
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === "production",
+                        sameSite: "lax",
+                        maxAge: 1000 * 60 * 60 * 24 * 7
+                    }
+                });
+            })
+            .catch(function (error) {
+                connectionPromise = null;
+                throw error;
+            });
+    }
+
+    await connectionPromise;
+}
+
+app.use("/api", async function (req, res, next) {
+    try {
+        await connectMongo();
+        sessionMiddleware(req, res, next);
+    } catch (error) {
+        console.error("[v0] MongoDB initialization failed:", error.message);
+        res.status(503).json({ error: "The database is unavailable. Check the MongoDB connection configuration." });
+    }
+});
 
 
 // ---------- helpers ----------
@@ -227,14 +278,17 @@ async function addSampleData() {
 
 // ---------- start ----------
 
-mongoose.connect(MONGO_URL)
-    .then(async function () {
-        console.log("MongoDB connected");
-        await addSampleData();
-        app.listen(PORT, function () {
-            console.log("FoodLink running at http://localhost:" + PORT);
+if (require.main === module) {
+    connectMongo()
+        .then(function () {
+            app.listen(PORT, function () {
+                console.log("FoodLink running on port " + PORT);
+            });
+        })
+        .catch(function (error) {
+            console.error("[v0] Could not start FoodLink:", error.message);
+            process.exitCode = 1;
         });
-    })
-    .catch(function (err) {
-        console.log("Could not connect to MongoDB:", err.message);
-    });
+}
+
+module.exports = app;
