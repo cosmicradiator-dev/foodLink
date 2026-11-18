@@ -4,6 +4,7 @@
   "description": "FoodLink - surplus food sharing (Node, Express, MongoDB)",
   "main": "server.js",
   "scripts": {
+    "build": "node -e \"console.log('No build step required; Vercel builds the Express function.')\"",
     "start": "node server.js"
   },
   "dependencies": {
